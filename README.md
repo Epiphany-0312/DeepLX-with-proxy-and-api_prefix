@@ -1,251 +1,71 @@
-<!--
- * @Author: Vincent Young
- * @Date: 2022-10-18 07:32:29
- * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-04-23 00:50:43
- * @FilePath: /DeepLX/README.md
- * @Telegram: https://t.me/missuo
- * 
- * Copyright © 2022 by Vincent, All Rights Reserved. 
--->
 
-[![GitHub Workflow][1]](https://github.com/OwO-Network/DeepLX/actions)
-[![Go Version][2]](https://github.com/OwO-Network/DeepLX/blob/main/go.mod)
-[![Go Report][3]](https://goreportcard.com/badge/github.com/OwO-Network/DeepLX)
-[![Maintainability][4]](https://codeclimate.com/github/OwO-Network/DeepLX/maintainability)
-[![GitHub License][5]](https://github.com/OwO-Network/DeepLX/blob/main/LICENSE)
-[![Docker Pulls][6]](https://hub.docker.com/r/missuo/deeplx)
-[![Releases][7]](https://github.com/OwO-Network/DeepLX/releases)
+# DeepLX with Proxy and API Prefix
 
-[1]: https://img.shields.io/github/actions/workflow/status/OwO-Network/DeepLX/release.yaml?logo=github
-[2]: https://img.shields.io/github/go-mod/go-version/OwO-Network/DeepLX?logo=go
-[3]: https://goreportcard.com/badge/github.com/OwO-Network/DeepLX
-[4]: https://api.codeclimate.com/v1/badges/b5b30239174fc6603aca/maintainability
-[5]: https://img.shields.io/github/license/OwO-Network/DeepLX
-[6]: https://img.shields.io/docker/pulls/missuo/deeplx?logo=docker
-[7]: https://img.shields.io/github/v/release/OwO-Network/DeepLX?logo=smartthings
+本项目为开源项目，在 [DeepLX](https://github.com/OwO-Network/DeepLX) 的基础上进行二次开发。本项目为 DeepLX 增加了代理功能和 API 前缀功能，方便用户在使用过程中通过代理服务器访问以及通过自定义的前缀路径进行 API 调用。
 
-## **Related Projects**
-| Link                                                                | Description                         | Maintainer                                                      |
-| ------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------- |
-| [OwO-Network/PyDeepLX](https://github.com/OwO-Network/PyDeepLX)     | Python Package for DeepLX           | [Vincent Yang](https://github.com/missuo)                       |
-| [OwO-Network/gdeeplx](https://github.com/OwO-Network/gdeeplx)       | Golang Package for DeepLX           | [Vincent Yang](https://github.com/missuo)                       |
-| [ifyour/deeplx](https://github.com/ifyour/deeplx)                   | JS Package for DeepLX (JavaScript)  | [ifyour](https://github.com/ifyour)                             |
-| [deeplx-serverless](https://github.com/LegendLeo/deeplx-serverless) | Serverless Package for DeepLX       | [LegendLeo](https://github.com/LegendLeo/deeplx-serverless)     |
+## 功能特性
 
-## Discussion Group
-[Telegram Group](https://t.me/+8KDGHKJCxEVkNzll)
+- **代理功能**：支持通过 SOCKS5 代理服务器访问 DeepL API，增强访问的隐私性和安全性。
+- **API 前缀功能**：允许用户自定义 API 路径前缀，有效防止服务被网络测绘工具扫描到，提高服务的安全性。
 
-## Description
-- `DeepLX` is listening to `0.0.0.0:1188` by default. You can modify the listening port by yourself.
-- `DeepLX` is using `DeepL` Free API.
-- `DeepLX` is unlimited to the number of requests.
+## 部署方法
 
-## Usage
-### For Developer
-#### Request Parameters
-- text: string
-- source_lang: string
-- target_lang: string
+推荐使用 Docker Compose 方法进行部署。以下是具体的部署步骤：
 
-#### Response
-```json
-{
-  "alternatives": [
-    "Did you hear about this?",
-    "You've heard about this?",
-    "You've heard of this?"
-  ],
-  "code": 200,
-  "data": "Have you heard about this?",
-  "id": 8356681003,
-  "method": "Free",
-  "source_lang": "ZH",
-  "target_lang": "EN"
-}
-```
-### Custom Options
-**The following settings are optional and not required.**
-- `-port` or `-p` : Listening port. Default is `1188`.
-- `-token` : Access token. If you have set it up, each request needs to include `Authorization` in the **Headers** or `token` parameter in the **URL Params**.
-- `-authkey` : DeepL Official `AuthKey`. If you have set it up, after the 429 response, the official AuthKey will be used for the request. If multiple authKeys are used simultaneously, they need to be separated by commas.
-- `-s`: `dl-session` is the cookie for a **DeepL Pro** account. If you set this, you will be able to use another endpoint `/v1/translate`, which can effectively avoid 429.
-- `/v2/translate` : This endpoint is fully compatible with the DeepL official API. When using this endpoint, please strictly adhere to the request styles outlined in the official DeepL documentation. Note that in this endpoint, please use `DeepL-Auth-Key $token` in the `Authorization`, which is actually the Access Token, not the official `Auth Key` of DeepL.
+1. 克隆项目代码
+
+   ```bash
+   git clone https://github.com/Epiphany-0312/DeepLX-with-proxy-and-api_prefix.git
+   ```
+
+2. 进入项目文件夹
+ ```
+cd DeepLX-with-proxy-and-api_prefix
+   ```
+
+3. 修改 config.yaml 文件，根据需要设置相关配置参数。
+
+   ```yaml
+   port: 1188
+   token: ""
+   auth_key: ""
+   dl_session: ""
+   #前三个变量含义见deeplx原项目
+   api_prefix: "/your_api_prefix"
+   #api前缀，设置后需访问http://your_ip:1188/your_api_prefix/translate
+   use_proxy: false
+   #是否开启代理
+   proxy_address: ""
+   #代理地址和端口
+
+   ```
+
+4. 使用 Docker Compose 启动服务
+
+   ```bash
+   docker-compose up --build
+   ```
 
 
-#### Example of requesting a token-protected `/v2/translate` endpoint
-```bash
-curl -X POST 'http://localhost:1188/v2/translate' \
---header 'Authorization: DeepL-Auth-Key [yourAccessToken] [yourAuthKey]' \
---header 'Content-Type: application/json' \
---data '{
-  "text": [
-    "Hello, world!"
-  ],
-  "target_lang": "DE"
-}'
-# Please note that either `yourAccessToken` or `yourAuthKey` can be omitted.
-```
 
-#### Requesting a token-protected **DeepLX API** instance using the `curl`
-```bash
-curl -X POST http://localhost:1188/translate \
--H "Content-Type: application/json" \
--H "Authorization: Bearer your_access_token" \
--d '{
-    "text": "Hello, world!",
-    "source_lang": "EN",
-    "target_lang": "DE"
-}'
-```
-or
-```bash
-curl -X POST http://localhost:1188/translate?token=your_access_token \
--H "Content-Type: application/json" \
--d '{
-    "text": "Hello, world!",
-    "source_lang": "EN",
-    "target_lang": "DE"
-}'
-```
 
-### Run with Docker
-```bash
-# ghcr.io
-docker run -itd -p 1188:1188 ghcr.io/owo-network/deeplx:latest
+## 项目结构
 
-# custom environment variables
-docker run -itd -p 1188:1188 -e "TOKEN=helloxxx" -e "AUTHKEY=xxxx:fx" -e "DL_SESSION=xxxxx" ghcr.io/owo-network/deeplx:latest
+- **main.go**：主程序入口，定义了路由和中间件。
+- **translate.go**：包含与 DeepL API 的交互逻辑。
+- **types.go**：定义了各种数据类型。
+- **utils.go**：包含一些工具函数。
+- **config.go**：负责加载和解析配置文件。
+- **Dockerfile**：用于构建 Docker 镜像。
+- **docker-compose.yml**：用于定义 Docker Compose 服务。
+- **config.yaml**：配置文件，包含所有配置参数。
 
-# dockerhub
-docker run -itd -p 1188:1188 missuo/deeplx:latest
+## 贡献
 
-# custom environment variables
-docker run -itd -p 1188:1188 -e "TOKEN=helloxxx" -e "AUTHKEY=xxxx:fx" -e "DL_SESSION=xxxxx" missuo/deeplx:latest
-```
+欢迎提交问题 (issues) 和拉取请求 (pull requests) 来贡献代码。
 
-### Run with Docker Compose
-```bash
-mkdir deeplx
-cd deeplx
-wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/compose.yaml
-# modify environment variables
-# environment:
-  # - TOKEN=helloxxx
-  # - AUTHKEY=xxxxxxx:fx
-  # - DL_SESSION=xxxxx
-# docker compose
-docker compose up -d
-```
+## 许可
 
-### Run on Linux Server
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/OwO-Network/DeepLX/main/install.sh)
-# or
-bash <(curl -Ls https://owo.nz/deeplx)
-```
+本项目基于 MIT License 许可进行开源。
 
-### Run on Mac
-#### Homebrew (Recommended)
-```bash
-brew tap owo-network/brew
-brew install deeplx
-brew services start owo-network/brew/deeplx
-
-# Update to the latest version
-brew update
-brew upgrade deeplx
-brew services restart owo-network/brew/deeplx
-
-# View the currently installed version
-brew list --versions deeplx
-```
-
-#### Manual
-1. Download  the latest release of DeepL X.
-```bash
-sudo mv deeplx_darwin_amd64 /usr/local/bin/deeplx
-sudo chmod +x /usr/local/bin/deeplx
-```
-
-2. Download the `me.missuo.deeplx.plist` to `~/Library/LaunchAgents`.
-```bash
-wget https://raw.githubusercontent.com/OwO-Network/DeepLX/main/me.missuo.deeplx.plist -O ~/Library/LaunchAgents/me.missuo.deeplx.plist
-```
-3. Run following command.
-```bash
-launchctl load ~/Library/LaunchAgents/me.missuo.deeplx.plist
-launchctl start ~/Library/LaunchAgents/me.missuo.deeplx.plist
-```
-
-### Install from AUR
-```bash
-paru -S deeplx-bin
-```
-
-After installation, start the daemon with the following command.
-
-```bash
-systemctl daemon-reload
-systemctl enable deeplx
-```
-
-**Special thanks to [AsukaMinato](https://github.com/asukaminato0721) for maintaining the updates of [ArchLinux packages](https://aur.archlinux.org/packages/deeplx-bin).**
-
-### Run on Sealos
-
-[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://cloud.sealos.io/?openapp=system-template%3FtemplateName%3Ddeeplx)
-
-## Setup on [Bob App](https://bobtranslate.com/)
-1. Install [bob-plugin-deeplx](https://github.com/missuo/bob-plugin-deeplx) on Bob.
-
-2. Setup the API. (If you use Brew to install locally you can skip this step)
-![c5c19dd89df6fae1a256d](./img/c5c19dd89df6fae1a256d.png)
-
-## Setup on [immersive-translate](https://github.com/immersive-translate/immersive-translate)
-**It is not recommended, because the `immersive-translate` will send many requests in a short time, which will cause the `DeepL API` to block your IP.**
-
-1. Install Latest [immersive-translate ](https://github.com/immersive-translate/immersive-translate/releases) on your browser.
-
-2. Click on **Developer Settings** in the bottom left corner. **Enable Beta experimental features**.
-
-3. Set the URL. (If you are not deploying locally, you need to change 127.0.0.1 to the IP of your server)
-
-![6a48ba28621f2465028f0](./img/6a48ba28621f2465028f0.png)
-
-## Use in Python
-```python
-import httpx, json
-
-deeplx_api = "http://127.0.0.1:1188/translate"
-
-data = {
-	"text": "Hello World",
-	"source_lang": "EN",
-	"target_lang": "ZH"
-}
-
-post_data = json.dumps(data)
-r = httpx.post(url = deeplx_api, data = post_data).text
-print(r)
-```
-
-## Backup the Docker Image of zu1k
-```shell
-docker run -itd -p 1188:80 missuo/deeplx-bk
-```
-**This docker image is not related to this project, as the original author deleted the image, it is only for backup.**
-
-## Acknowledgements
-
-### Contributors
-
-<a href="https://github.com/OwO-Network/DeepLX/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=OwO-Network/DeepLX&anon=0" />
-</a>
-
-## Activity
-![Alt](https://repobeats.axiom.co/api/embed/5f473f85db27cb30028a2f3db7a560f3577a4860.svg "Repobeats analytics image")
-
-## License
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FOwO-Network%2FDeepLX?ref=badge_large)
+如果您在使用过程中遇到任何问题，欢迎在 GitHub 项目页面提交问题 (issues)，我们将尽快回复并解决。
