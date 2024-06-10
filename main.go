@@ -1,14 +1,3 @@
-/*
- * @Author: Vincent Yang
- * @Date: 2023-07-01 21:45:34
- * @LastEditors: Vincent Young
- * @LastEditTime: 2024-04-23 14:49:35
- * @FilePath: /DeepLX/main.go
- * @Telegram: https://t.me/missuo
- * @GitHub: https://github.com/missuo
- *
- * Copyright © 2024 by Vincent, All Rights Reserved.
- */
 package main
 
 import (
@@ -74,8 +63,16 @@ func main() {
 	r := gin.Default()
 	r.Use(cors.Default())
 
+	apiPrefix := cfg.ApiPrefix
+	if apiPrefix == "" {
+		apiPrefix = "/"
+	} else if !strings.HasPrefix(apiPrefix, "/") {
+		apiPrefix = "/" + apiPrefix
+	}
+	apiPrefix = strings.TrimSuffix(apiPrefix, "/")
+
 	// Defining the root endpoint which returns the project details
-	r.GET("/", func(c *gin.Context) {
+	r.GET(apiPrefix+"/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"code":    http.StatusOK,
 			"message": "DeepL Free API, Developed by sjlleo and missuo. Go to /translate with POST. http://github.com/OwO-Network/DeepLX",
@@ -83,7 +80,7 @@ func main() {
 	})
 
 	// Free API endpoint, No Pro Account required
-	r.POST("/translate", authMiddleware(cfg), func(c *gin.Context) {
+	r.POST(apiPrefix+"/translate", authMiddleware(cfg), func(c *gin.Context) {
 		req := PayloadFree{}
 		c.BindJSON(&req)
 
@@ -92,7 +89,7 @@ func main() {
 		translateText := req.TransText
 		authKey := cfg.AuthKey
 
-		result, err := translateByDeepLX(sourceLang, targetLang, translateText, authKey)
+		result, err := translateByDeepLX(cfg, sourceLang, targetLang, translateText, authKey)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -117,7 +114,7 @@ func main() {
 	})
 
 	// Pro API endpoint, Pro Account required
-	r.POST("/v1/translate", authMiddleware(cfg), func(c *gin.Context) {
+	r.POST(apiPrefix+"/v1/translate", authMiddleware(cfg), func(c *gin.Context) {
 		req := PayloadFree{}
 		c.BindJSON(&req)
 
@@ -126,12 +123,6 @@ func main() {
 		translateText := req.TransText
 
 		dlSession := cfg.DlSession
-
-		cookie := c.GetHeader("Cookie")
-		if cookie != "" {
-			dlSession = strings.Replace(cookie, "dl_session=", "", -1)
-		}
-
 		if dlSession == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    http.StatusUnauthorized,
@@ -146,7 +137,7 @@ func main() {
 			return
 		}
 
-		result, err := translateByDeepLXPro(sourceLang, targetLang, translateText, dlSession)
+		result, err := translateByDeepLXPro(cfg, sourceLang, targetLang, translateText, dlSession)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}
@@ -171,7 +162,7 @@ func main() {
 	})
 
 	// Free API endpoint, Consistent with the official API format
-	r.POST("/v2/translate", authMiddleware(cfg), func(c *gin.Context) {
+	r.POST(apiPrefix+"/v2/translate", authMiddleware(cfg), func(c *gin.Context) {
 		authorizationHeader := c.GetHeader("Authorization")
 		var authKey string
 
@@ -206,7 +197,7 @@ func main() {
 			targetLang = jsonData.TargetLang
 		}
 
-		result, err := translateByDeepLX("", targetLang, translateText, authKey)
+		result, err := translateByDeepLX(cfg, "", targetLang, translateText, authKey)
 		if err != nil {
 			log.Fatalf("Translation failed: %s", err)
 		}

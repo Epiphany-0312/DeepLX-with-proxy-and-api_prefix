@@ -1,55 +1,54 @@
-/*
- * @Author: Vincent Yang
- * @Date: 2024-04-23 00:39:03
- * @LastEditors: Vincent Yang
- * @LastEditTime: 2024-04-23 00:43:43
- * @FilePath: /DeepLX/config.go
- * @Telegram: https://t.me/missuo
- * @GitHub: https://github.com/missuo
- *
- * Copyright © 2024 by Vincent, All Rights Reserved.
- */
-
 package main
 
 import (
 	"flag"
+	"log"
 	"os"
+
+	"gopkg.in/yaml.v2"
 )
 
+type Config struct {
+	Port         int    `yaml:"port"`
+	Token        string `yaml:"token"`
+	AuthKey      string `yaml:"auth_key"`
+	DlSession    string `yaml:"dl_session"`
+	ApiPrefix    string `yaml:"api_prefix"`
+	UseProxy     bool   `yaml:"use_proxy"`
+	ProxyAddress string `yaml:"proxy_address"`
+}
+
 func initConfig() *Config {
-	cfg := &Config{
-		Port: 1188,
+	cfg := &Config{}
+	configPath := "config.yaml"
+	if envConfigPath, exists := os.LookupEnv("CONFIG_PATH"); exists {
+		configPath = envConfigPath
 	}
 
-	// Port flag
+	// Load configuration from config.yaml
+	file, err := os.Open(configPath)
+	if err != nil {
+		log.Fatalf("Failed to open %s: %v", configPath, err)
+	}
+	defer file.Close()
+
+	decoder := yaml.NewDecoder(file)
+	err = decoder.Decode(&cfg)
+	if err != nil {
+		log.Fatalf("Failed to parse %s: %v", configPath, err)
+	}
+
+	// Override with command line flags if provided
 	flag.IntVar(&cfg.Port, "port", cfg.Port, "set up the port to listen on")
 	flag.IntVar(&cfg.Port, "p", cfg.Port, "set up the port to listen on")
-
-	// DL Session flag
-	flag.StringVar(&cfg.DlSession, "s", "", "set the dl-session for /v1/translate endpoint")
-	if cfg.DlSession == "" {
-		if dlSession, ok := os.LookupEnv("DL_SESSION"); ok {
-			cfg.DlSession = dlSession
-		}
-	}
-
-	// Access token flag
-	flag.StringVar(&cfg.Token, "token", "", "set the access token for /translate endpoint")
-	if cfg.Token == "" {
-		if token, ok := os.LookupEnv("TOKEN"); ok {
-			cfg.Token = token
-		}
-	}
-
-	// DeepL Official Authentication key flag
-	flag.StringVar(&cfg.AuthKey, "authkey", "", "The authentication key for DeepL API")
-	if cfg.AuthKey == "" {
-		if authKey, ok := os.LookupEnv("AUTHKEY"); ok {
-			cfg.AuthKey = authKey
-		}
-	}
+	flag.StringVar(&cfg.DlSession, "s", cfg.DlSession, "set the dl-session for /v1/translate endpoint")
+	flag.StringVar(&cfg.Token, "token", cfg.Token, "set the access token for /translate endpoint")
+	flag.StringVar(&cfg.AuthKey, "authkey", cfg.AuthKey, "The authentication key for DeepL API")
+	flag.StringVar(&cfg.ApiPrefix, "api_prefix", cfg.ApiPrefix, "set the API prefix")
+	flag.BoolVar(&cfg.UseProxy, "use_proxy", cfg.UseProxy, "whether to use proxy")
+	flag.StringVar(&cfg.ProxyAddress, "proxy_address", cfg.ProxyAddress, "set the proxy address")
 
 	flag.Parse()
+
 	return cfg
 }

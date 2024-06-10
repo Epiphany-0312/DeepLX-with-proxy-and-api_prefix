@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  deeplx:
+    build: .
+    container_name: deeplx_container
+    ports:
+      - "1188:1188"
+    volumes:
+      - ./config.yaml:/app/config.yaml

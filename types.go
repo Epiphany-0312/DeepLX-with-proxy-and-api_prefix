@@ -11,13 +11,6 @@
  */
 package main
 
-type Config struct {
-	Port      int
-	Token     string
-	AuthKey   string
-	DlSession string
-}
-
 type Lang struct {
 	SourceLangUserSelected string `json:"source_lang_user_selected"`
 	TargetLang             string `json:"target_lang"`

@@ -11,6 +11,7 @@ import (
 	"github.com/abadojack/whatlanggo"
 	"github.com/andybalholm/brotli"
 	"github.com/tidwall/gjson"
+	"golang.org/x/net/proxy"
 )
 
 func initDeepLXData(sourceLang string, targetLang string) *PostData {
@@ -32,7 +33,22 @@ func initDeepLXData(sourceLang string, targetLang string) *PostData {
 	}
 }
 
-func translateByOfficialAPI(text string, sourceLang string, targetLang string, authKey string) (string, error) {
+func getHttpClient(useProxy bool, proxyAddress string) (*http.Client, error) {
+	if useProxy {
+		dialer, err := proxy.SOCKS5("tcp", proxyAddress, nil, proxy.Direct)
+		if err != nil {
+			return nil, err
+		}
+		return &http.Client{
+			Transport: &http.Transport{
+				Dial: dialer.Dial,
+			},
+		}, nil
+	}
+	return &http.Client{}, nil
+}
+
+func translateByOfficialAPI(cfg *Config, text string, sourceLang string, targetLang string, authKey string) (string, error) {
 	url := "https://api-free.deepl.com/v2/translate"
 	textArray := strings.Split(text, "\n")
 
@@ -55,7 +71,11 @@ func translateByOfficialAPI(text string, sourceLang string, targetLang string, a
 	req.Header.Set("Authorization", "DeepL-Auth-Key "+authKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client, err := getHttpClient(cfg.UseProxy, cfg.ProxyAddress)
+	if err != nil {
+		log.Fatalf("Failed to obtain proxy dialer: %v", err)
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -83,7 +103,7 @@ func translateByOfficialAPI(text string, sourceLang string, targetLang string, a
 	return sb.String(), nil
 }
 
-func translateByDeepLX(sourceLang string, targetLang string, translateText string, authKey string) (DeepLXTranslationResult, error) {
+func translateByDeepLX(cfg *Config, sourceLang string, targetLang string, translateText string, authKey string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)
@@ -151,8 +171,12 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	request.Header.Set("x-app-version", "2.9.1")
 	request.Header.Set("Connection", "keep-alive")
 
+	client, err := getHttpClient(cfg.UseProxy, cfg.ProxyAddress)
+	if err != nil {
+		log.Fatalf("Failed to obtain proxy dialer: %v", err)
+	}
+
 	// Making the HTTP request to the DeepL API
-	client := &http.Client{}
 	resp, err := client.Do(request)
 	if err != nil {
 		log.Println(err)
@@ -194,7 +218,7 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 				continue
 			} else {
 				if validity {
-					translatedText, err := translateByOfficialAPI(translateText, sourceLang, targetLang, authKey)
+					translatedText, err := translateByOfficialAPI(cfg, translateText, sourceLang, targetLang, authKey)
 					if err != nil {
 						return DeepLXTranslationResult{
 							Code:    http.StatusTooManyRequests,
@@ -240,11 +264,11 @@ func translateByDeepLX(sourceLang string, targetLang string, translateText strin
 	}
 	return DeepLXTranslationResult{
 		Code:    http.StatusServiceUnavailable,
-		Message: "Uknown error",
+		Message: "Unknown error",
 	}, nil
 }
 
-func translateByDeepLXPro(sourceLang string, targetLang string, translateText string, dlSession string) (DeepLXTranslationResult, error) {
+func translateByDeepLXPro(cfg *Config, sourceLang string, targetLang string, translateText string, dlSession string) (DeepLXTranslationResult, error) {
 	id := getRandomNumber()
 	if sourceLang == "" {
 		lang := whatlanggo.DetectLang(translateText)
@@ -309,8 +333,12 @@ func translateByDeepLXPro(sourceLang string, targetLang string, translateText st
 	request.Header.Set("Connection", "keep-alive")
 	request.Header.Set("Cookie", "dl_session="+dlSession)
 
+	client, err := getHttpClient(cfg.UseProxy, cfg.ProxyAddress)
+	if err != nil {
+		log.Fatalf("Failed to obtain proxy dialer: %v", err)
+	}
+
 	// Making the HTTP request to the DeepL API
-	client := &http.Client{}
 	resp, err := client.Do(request)
 	if err != nil {
 		log.Println(err)

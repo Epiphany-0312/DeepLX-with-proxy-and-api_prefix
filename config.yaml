@@ -1,0 +1,11 @@
+port: 1188
+token: ""
+auth_key: ""
+dl_session: ""
+#前三个变量含义见deeplx原项目
+api_prefix: "/your_api_prefix"
+#api前缀，设置后需访问http://your_ip:1188/your_api_prefix/translate
+use_proxy: false
+#是否开启代理
+proxy_address: ""
+#代理地址和端口
